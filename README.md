@@ -1,5 +1,9 @@
 # AutoU Email AI – README Geral
 
+# Projeto rodando
+Você pode acessar o projeto rodando em servidor pela url:
+https://bot-email-i9b823gul-leonardo-fonsecas-projects-c9dab81e.vercel.app
+
 **Aplicação completa** para classificar emails e sugerir respostas: backend FastAPI com OpenAI GPT e frontend Next.js para upload e visualização.
 
 ## Tecnologias
@@ -12,7 +16,7 @@ Git, Python 3.10+, Node.js 18+, chave válida da OpenAI (para rodar localmente).
 ## Instruções
 Obs: Cada frente do projeto conta com um readme mais completo e tecnico detalhando o projeto.
 
-Para rodar o projeto abra dois terminais na raiz do projeto e rode:
+Para rodar o projeto localmente abra dois terminais na raiz do projeto e rode:
 
 backend:
 ```bash
