@@ -12,40 +12,57 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 @router.post("/classify-pdf", response_model=ClassifyResponse)
 async def classify_pdf(file: UploadFile = File(...)):
-    # verifica se é um pdf válido
-    if not file.filename.lower().endswith(".pdf"):
+    """
+    Recebe um arquivo (.pdf ou .txt), extrai o texto e classifica com GPT.
+    """
+    filename = file.filename.lower()
+
+    # garante que é .pdf ou .txt
+    if not (filename.endswith(".pdf") or filename.endswith(".txt")):
         return ClassifyResponse(
             category="Improdutivo",
             confidence=1.0,
-            suggested_reply="O arquivo enviado não é PDF."
+            suggested_reply="O arquivo enviado não é .pdf nem .txt."
         )
 
     contents = await file.read()
-    text = ""
 
-    # tenta realizar a leitura do pdf
-    try:
-        doc = fitz.open("pdf", contents)
-        for page in doc:
-            text += page.get_text()
-        doc.close()
-    except Exception as e:
-        return ClassifyResponse(
-            category="Improdutivo",
-            confidence=1.0,
-            suggested_reply=f"Erro ao ler PDF: {str(e)}"
-        )
+    # extrair texto de PDF
+    if filename.endswith(".pdf"):
+        import fitz
+        text = ""
+        try:
+            doc = fitz.open("pdf", contents)
+            for page in doc:
+                text += page.get_text()
+            doc.close()
+        except Exception as e:
+            return ClassifyResponse(
+                category="Improdutivo",
+                confidence=1.0,
+                suggested_reply=f"Erro ao ler PDF: {str(e)}"
+            )
+    # extrair texto de TXT
+    else:
+        try:
+            text = contents.decode("utf-8", errors="ignore")
+        except Exception:
+            return ClassifyResponse(
+                category="Improdutivo",
+                confidence=1.0,
+                suggested_reply="Erro ao ler arquivo TXT."
+            )
 
     if not text.strip():
         return ClassifyResponse(
             category="Improdutivo",
             confidence=1.0,
-            suggested_reply="Não foi possível extrair texto do PDF."
+            suggested_reply="Não foi possível extrair texto do arquivo."
         )
 
-    # prompt pra IA
+    # mesma lógica do classify_pdf
     prompt = f"""
-    Você é um assistente que analisa emails em PDF.
+    Você é um assistente que analisa emails em arquivos (.pdf ou .txt).
     Classifique o seguinte conteúdo em:
     - Produtivo
     - Improdutivo
@@ -56,18 +73,16 @@ async def classify_pdf(file: UploadFile = File(...)):
     Responda em JSON com os campos:
     category, confidence, suggested_reply
     """
-    # chama o modelo da OpenAI com o prompt definido acima.
+
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.3,
     )
 
-    # extrai e limpa o texto gerado pelo modelo da resposta retornada
     raw = completion.choices[0].message.content or ""
     cleaned = clean_response(raw)
 
-    # tenta converter o texto limpo para JSON
     try:
         parsed = json.loads(cleaned)
         return ClassifyResponse(

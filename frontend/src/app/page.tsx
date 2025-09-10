@@ -138,7 +138,7 @@ export default function Home() {
                     name="file"
                     type="file"
                     className="hidden"
-                    accept=".pdf"
+                    accept=".pdf, .txt"
                     onChange={handleFileChange}
                     required
                   />
